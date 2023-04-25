@@ -27,7 +27,7 @@ use obce_codegen::{
     definition,
     error,
     extension,
-    hash,
+    id,
     implementation,
     mock,
 };
@@ -432,22 +432,34 @@ pub fn ink_extension(attrs: TokenStream, struct_item: TokenStream) -> TokenStrea
     }
 }
 
-/// Chain extension method hasher.
+/// Chain extension identifier lookup.
 ///
 /// # Description
 ///
-/// Using [`hash!`](macro@hash) macro, you can generate `u32` hashes of chain extension method idents.
-///
-/// This macro is rarely used directly, you should prefer using `obce::id` instead.
+/// Using [`obce::id!`](macro@id) macro, you can lookup chain extension and chain extension method identifiers.
 ///
 /// # Example
 ///
 /// ```ignore
-/// hash!(chain_extension_method);
+/// #[obce::definition(id = 123)]
+/// pub trait ChainExtension {
+///     #[obce(id = 456)]
+///     fn method(&self);
+/// }
+///
+/// assert_eq!(obce::id!(ChainExtension), 123);
+/// assert_eq!(obce::id!(ChainExtension::method), 456);
 /// ```
+/// 
+/// # Supported paths
+/// 
+/// To correctly distinguish between a chain extension itself and a chain extension method,
+/// you have to provide a path with at most two segments (for example, `ChainExtension`, `SomeExtension::method`).
+/// 
+/// The macro will provide you with an error message in case if the path you provided is incorrect.
 #[proc_macro]
-pub fn hash(name: TokenStream) -> TokenStream {
-    match hash::generate(name.into()) {
+pub fn id(path: TokenStream) -> TokenStream {
+    match id::generate(path.into()) {
         Ok(tokens) => tokens.into(),
         Err(error) => error.to_compile_error().into(),
     }

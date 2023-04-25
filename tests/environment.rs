@@ -1,6 +1,9 @@
-use obce::ink_lang::env::{
-    DefaultEnvironment,
-    Environment,
+use obce::ink_lang::{
+    env::{
+        DefaultEnvironment,
+        Environment,
+    },
+    metadata::TypeInfo
 };
 
 #[obce::definition(id = 123)]
@@ -9,10 +12,13 @@ pub trait Trait {
 }
 
 #[obce::ink_lang::extension]
+#[cfg_attr(feature = "std", derive(TypeInfo))]
 pub struct TestExtension;
 
 impl Trait for TestExtension {}
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[cfg_attr(feature = "std", derive(TypeInfo))]
 pub struct CustomEnvironment;
 
 impl Environment for CustomEnvironment {
