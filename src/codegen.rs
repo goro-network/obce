@@ -22,15 +22,25 @@
 /// Chain extension description.
 ///
 /// This trait is automatically implemented with `#[obce::definition]` macro expansion.
+/// 
+/// # Identifier lookup
+/// 
+/// To acquire the chain extension identifier value you can use the [`obce::id!`](macro@crate::id) macro.
 pub trait ExtensionDescription {
     /// Unique chain extension identifier.
     const ID: u16;
 }
 
 /// Chain extension method description.
+/// 
+/// # Generics
 ///
 /// `METHOD_HASH` generic is dependent solely on the method name,
 /// while [`ID`](MethodDescription::ID) can be changed via `#[obce(id = ...)]` macro.
+/// 
+/// # Identifier lookup
+/// 
+/// To acquire the method identifier value you can use the [`obce::id!`](macro@crate::id) macro.
 pub trait MethodDescription<const METHOD_HASH: u32> {
     /// Unique chain extension method identifier.
     const ID: u16;

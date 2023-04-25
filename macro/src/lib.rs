@@ -105,6 +105,21 @@ pub fn definition(attrs: TokenStream, trait_item: TokenStream) -> TokenStream {
 ///     }
 /// }
 /// ```
+/// 
+/// # Generics
+/// 
+/// `E` represents the external environment in which smart contracts are being executed.
+/// When building chain extension without OBCE, it is usually bounded by `pallet_contracts::chain_extension::Ext`,
+/// providing you access to methods that interacts with the execution environment. However,
+/// to provide you with better testing capabilities OBCE does not bound the `E` generic itself,
+/// resorting to bound the `Env` with it instead.
+/// 
+/// `T` represents your configuration type, which can be bounded by pallet-specific configuration traits
+/// (such as `pallet_contracts::pallet::Config` and `frame_system::Config`).
+/// 
+/// `Env` generic is used to represent the OBCE-specific chain extension environment, which is more easily
+/// testable, and can additionally be bounded by any trait you want to use. For example, you can add a trait that
+/// represents your chain-specific pallet and use it inside of your chain extension.
 ///
 /// # Weight charging
 ///
@@ -123,6 +138,43 @@ pub fn definition(attrs: TokenStream, trait_item: TokenStream) -> TokenStream {
 /// You can also use `#[obce(weight(expr = ...))]` to charge weight without pallet calls.
 /// In this case, you can simply provide any expression which returns `Weight`:
 /// `#[obce(weight(expr = "Weight::from_parts(ref_time, proof_size)"))]`.
+/// 
+/// OBCE also provides you with a pre-charging feature, which charges weight before
+/// any data parsing is done, making sure that weight is paid even if the call
+/// is not successful:
+/// 
+/// ```ignore
+/// use obce::substrate::{
+///     frame_support::dispatch::Weight,
+///     frame_system::Config as SysConfig,
+///     pallet_contracts::Config as ContractConfig,
+///     sp_runtime::traits::StaticLookup,
+///     ChainExtensionEnvironment,
+///     ExtensionContext
+/// };
+/// 
+/// pub struct ChainExtension;
+/// 
+/// #[obce::definition]
+/// pub trait ChainExtensionDefinition {
+///     fn extension_method(&mut self, val: u64);
+/// }
+/// 
+/// #[obce::implementation]
+/// impl<'a, E, T, Env> ChainExtensionDefinition for ExtensionContext<'a, E, T, Env, ChainExtension>
+/// where
+///     T: SysConfig + ContractConfig,
+///     <<T as SysConfig>::Lookup as StaticLookup>::Source: From<<T as SysConfig>::AccountId>,
+///     Env: ChainExtensionEnvironment<E, T>,
+/// {
+///     #[obce(weight(expr = "Weight::from_parts(123, 0)", pre_charge))]
+///     fn extension_method(&mut self, _val: u64) {
+///         self.pre_charged().unwrap();
+///     }
+/// }
+/// 
+/// fn main() {}
+/// ```
 ///
 /// ## Usage example
 ///
