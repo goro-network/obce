@@ -331,6 +331,9 @@ pub fn error(attrs: TokenStream, enum_item: TokenStream) -> TokenStream {
 /// You can use [`#[obce::mock]`](macro@mock) to automatically generate `register_chain_extensions`
 /// function, which accepts a context and automatically registers mocked chain extension methods
 /// for off-chain ink! smart contract testing.
+/// 
+/// Such a testing is useful to check smart contract's behaviour in the absence of
+/// an available node.
 ///
 /// ```ignore
 /// // ink! smart contract definition is omitted.
@@ -375,13 +378,75 @@ pub fn error(attrs: TokenStream, enum_item: TokenStream) -> TokenStream {
 ///     // second_method is not required to be present here
 /// }
 /// ```
+/// 
+/// If an attempt is made to make a call to a missing method a panic with `UnregisteredChainExtension`
+/// message will be issued.
 ///
 /// # Context
 ///
 /// The item that you implement your definition trait for becomes your testing context.
 ///
 /// You will receive the same testing context when calling methods multiple times,
-/// thus it can be used as your chain extension testing state.
+/// thus it can be used as your chain extension testing state:
+/// 
+/// ```ignore
+/// #[obce::definition]
+/// pub trait Trait {
+///     fn method(&mut self) -> u32;
+/// }
+/// 
+/// #[obce::ink_lang::extension]
+/// struct TestExtension;
+/// 
+/// impl Trait for TestExtension {}
+/// 
+/// #[ink::contract]
+/// mod simple_contract {
+///     use crate::{
+///         TestExtension,
+///         Trait,
+///     };
+/// 
+///     #[ink(storage)]
+///     pub struct SimpleContract {}
+/// 
+///     impl SimpleContract {
+///         #[ink(constructor)]
+///         pub fn new() -> Self {
+///             SimpleContract {}
+///         }
+/// 
+///         #[ink(message)]
+///         pub fn call_method(&mut self) -> u32 {
+///             TestExtension.method()
+///         }
+///     }
+/// }
+/// 
+/// mod state_test {
+///     #[derive(Clone, Default)]
+///     pub struct State {
+///         call_count: u32,
+///     }
+/// 
+///     #[obce::mock]
+///     impl crate::Trait for State {
+///         fn method(&mut self) -> u32 {
+///             self.call_count += 1;
+///             self.call_count
+///         }
+///     }
+/// 
+///     #[test]
+///     fn call_contract() {
+///         register_chain_extensions(State::default());
+///         let mut contract = crate::simple_contract::SimpleContract::new();
+///         assert_eq!(contract.call_method(), 1);
+///         assert_eq!(contract.call_method(), 2);
+///         assert_eq!(contract.call_method(), 3);
+///     }
+/// }
+/// ```
 ///
 /// # General guidelines
 ///
