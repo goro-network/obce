@@ -27,7 +27,7 @@ use obce_codegen::{
     definition,
     error,
     extension,
-    hash,
+    id,
     implementation,
     mock,
 };
@@ -106,6 +106,21 @@ pub fn definition(attrs: TokenStream, trait_item: TokenStream) -> TokenStream {
 /// }
 /// ```
 ///
+/// # Generics
+///
+/// `E` represents the external environment in which smart contracts are being executed.
+/// When building chain extension without OBCE, it is usually bounded by `pallet_contracts::chain_extension::Ext`,
+/// providing you access to methods that interacts with the execution environment. However,
+/// to provide you with better testing capabilities OBCE does not bound the `E` generic itself,
+/// resorting to bound the `Env` with it instead.
+///
+/// `T` represents your configuration type, which can be bounded by pallet-specific configuration traits
+/// (such as `pallet_contracts::pallet::Config` and `frame_system::Config`).
+///
+/// `Env` generic is used to represent the OBCE-specific chain extension environment, which is more easily
+/// testable, and can additionally be bounded by any trait you want to use. For example, you can add a trait that
+/// represents your chain-specific pallet and use it inside of your chain extension.
+///
 /// # Weight charging
 ///
 /// You can use `#[obce(weight(dispatch = ...))]` to automatically charge
@@ -123,6 +138,43 @@ pub fn definition(attrs: TokenStream, trait_item: TokenStream) -> TokenStream {
 /// You can also use `#[obce(weight(expr = ...))]` to charge weight without pallet calls.
 /// In this case, you can simply provide any expression which returns `Weight`:
 /// `#[obce(weight(expr = "Weight::from_parts(ref_time, proof_size)"))]`.
+///
+/// OBCE also provides you with a pre-charging feature, which charges weight before
+/// any data parsing is done, making sure that weight is paid even if the call
+/// is not successful:
+///
+/// ```ignore
+/// use obce::substrate::{
+///     frame_support::dispatch::Weight,
+///     frame_system::Config as SysConfig,
+///     pallet_contracts::Config as ContractConfig,
+///     sp_runtime::traits::StaticLookup,
+///     ChainExtensionEnvironment,
+///     ExtensionContext
+/// };
+///
+/// pub struct ChainExtension;
+///
+/// #[obce::definition]
+/// pub trait ChainExtensionDefinition {
+///     fn extension_method(&mut self, val: u64);
+/// }
+///
+/// #[obce::implementation]
+/// impl<'a, E, T, Env> ChainExtensionDefinition for ExtensionContext<'a, E, T, Env, ChainExtension>
+/// where
+///     T: SysConfig + ContractConfig,
+///     <<T as SysConfig>::Lookup as StaticLookup>::Source: From<<T as SysConfig>::AccountId>,
+///     Env: ChainExtensionEnvironment<E, T>,
+/// {
+///     #[obce(weight(expr = "Weight::from_parts(123, 0)", pre_charge))]
+///     fn extension_method(&mut self, _val: u64) {
+///         self.pre_charged().unwrap();
+///     }
+/// }
+///
+/// fn main() {}
+/// ```
 ///
 /// ## Usage example
 ///
@@ -280,6 +332,9 @@ pub fn error(attrs: TokenStream, enum_item: TokenStream) -> TokenStream {
 /// function, which accepts a context and automatically registers mocked chain extension methods
 /// for off-chain ink! smart contract testing.
 ///
+/// Such a testing is useful to check smart contract's behaviour in the absence of
+/// an available node.
+///
 /// ```ignore
 /// // ink! smart contract definition is omitted.
 ///
@@ -324,12 +379,74 @@ pub fn error(attrs: TokenStream, enum_item: TokenStream) -> TokenStream {
 /// }
 /// ```
 ///
+/// If an attempt is made to make a call to a missing method a panic with `UnregisteredChainExtension`
+/// message will be issued.
+///
 /// # Context
 ///
 /// The item that you implement your definition trait for becomes your testing context.
 ///
 /// You will receive the same testing context when calling methods multiple times,
-/// thus it can be used as your chain extension testing state.
+/// thus it can be used as your chain extension testing state:
+///
+/// ```ignore
+/// #[obce::definition]
+/// pub trait Trait {
+///     fn method(&mut self) -> u32;
+/// }
+///
+/// #[obce::ink_lang::extension]
+/// struct TestExtension;
+///
+/// impl Trait for TestExtension {}
+///
+/// #[ink::contract]
+/// mod simple_contract {
+///     use crate::{
+///         TestExtension,
+///         Trait,
+///     };
+///
+///     #[ink(storage)]
+///     pub struct SimpleContract {}
+///
+///     impl SimpleContract {
+///         #[ink(constructor)]
+///         pub fn new() -> Self {
+///             SimpleContract {}
+///         }
+///
+///         #[ink(message)]
+///         pub fn call_method(&mut self) -> u32 {
+///             TestExtension.method()
+///         }
+///     }
+/// }
+///
+/// mod state_test {
+///     #[derive(Clone, Default)]
+///     pub struct State {
+///         call_count: u32,
+///     }
+///
+///     #[obce::mock]
+///     impl crate::Trait for State {
+///         fn method(&mut self) -> u32 {
+///             self.call_count += 1;
+///             self.call_count
+///         }
+///     }
+///
+///     #[test]
+///     fn call_contract() {
+///         register_chain_extensions(State::default());
+///         let mut contract = crate::simple_contract::SimpleContract::new();
+///         assert_eq!(contract.call_method(), 1);
+///         assert_eq!(contract.call_method(), 2);
+///         assert_eq!(contract.call_method(), 3);
+///     }
+/// }
+/// ```
 ///
 /// # General guidelines
 ///
@@ -432,22 +549,34 @@ pub fn ink_extension(attrs: TokenStream, struct_item: TokenStream) -> TokenStrea
     }
 }
 
-/// Chain extension method hasher.
+/// Chain extension identifier lookup.
 ///
 /// # Description
 ///
-/// Using [`hash!`](macro@hash) macro, you can generate `u32` hashes of chain extension method idents.
-///
-/// This macro is rarely used directly, you should prefer using `obce::id` instead.
+/// Using [`obce::id!`](macro@id) macro, you can lookup chain extension and chain extension method identifiers.
 ///
 /// # Example
 ///
 /// ```ignore
-/// hash!(chain_extension_method);
+/// #[obce::definition(id = 123)]
+/// pub trait ChainExtension {
+///     #[obce(id = 456)]
+///     fn method(&self);
+/// }
+///
+/// assert_eq!(obce::id!(ChainExtension), 123);
+/// assert_eq!(obce::id!(ChainExtension::method), 456);
 /// ```
+///
+/// # Supported paths
+///
+/// To correctly distinguish between a chain extension itself and a chain extension method,
+/// you have to provide a path with at most two segments (for example, `ChainExtension`, `SomeExtension::method`).
+///
+/// The macro will provide you with an error message in case if the path you provided is incorrect.
 #[proc_macro]
-pub fn hash(name: TokenStream) -> TokenStream {
-    match hash::generate(name.into()) {
+pub fn id(path: TokenStream) -> TokenStream {
+    match id::generate(path.into()) {
         Ok(tokens) => tokens.into(),
         Err(error) => error.to_compile_error().into(),
     }

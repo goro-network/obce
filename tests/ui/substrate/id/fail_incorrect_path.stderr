@@ -1,0 +1,5 @@
+error: id macro supports only two-segment paths (ChainExtension, ChainExtension::method)
+  --> tests/ui/substrate/id/fail_incorrect_path.rs:12:9
+   |
+12 |     id!(nested::Trait::extension_method);
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

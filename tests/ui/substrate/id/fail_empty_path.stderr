@@ -1,0 +1,7 @@
+error: unexpected end of input, expected identifier
+ --> tests/ui/substrate/id/fail_empty_path.rs:4:5
+  |
+4 |     id!();
+  |     ^^^^^
+  |
+  = note: this error originates in the macro `id` (in Nightly builds, run with -Z macro-backtrace for more info)
