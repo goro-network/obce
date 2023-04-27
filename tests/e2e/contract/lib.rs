@@ -4,7 +4,7 @@
 mod test_contract {
     use chain_extension::{
         ink::Extension,
-        ChainExtension,
+        ChainExtension as _,
         Error,
     };
     use ink_env::DefaultEnvironment;

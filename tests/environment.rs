@@ -3,7 +3,7 @@ use obce::ink_lang::{
         DefaultEnvironment,
         Environment,
     },
-    metadata::TypeInfo
+    metadata::TypeInfo,
 };
 
 #[obce::definition(id = 123)]

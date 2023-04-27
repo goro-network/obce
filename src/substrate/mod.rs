@@ -47,9 +47,9 @@ use sp_runtime::DispatchError;
 ///
 /// This trait is automatically implemented on your Substrate chain extension struct
 /// with [`#[obce::implementation]`](macro@crate::implementation) expansion.
-/// 
+///
 /// # Generics
-/// 
+///
 /// This trait mimics the generics that are used with [`#[obce::implementation]`](macro@crate::implementation) macro.
 pub trait CallableChainExtension<E, T, Env> {
     /// Call chain extension with the provided [`ChainExtensionEnvironment`] implementation.
@@ -57,9 +57,9 @@ pub trait CallableChainExtension<E, T, Env> {
 }
 
 /// Chain extension context that you can use with your implementations.
-/// 
+///
 /// # Generics
-/// 
+///
 /// This struct mimics the generics that are used with [`#[obce::implementation]`](macro@crate::implementation) macro.
 pub struct ExtensionContext<'a, E, T, Env, Extension>
 where
@@ -90,7 +90,7 @@ where
     }
 
     /// Get the pre-charged amount of weight.
-    /// 
+    ///
     /// This method returns [`None`] if there was no pre-charge made,
     /// or if you previously called this method, since there is no copy
     /// of a charged amount involved.
