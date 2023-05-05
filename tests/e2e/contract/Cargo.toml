@@ -17,11 +17,7 @@ ink_storage = { version = "4.0.0", default-features = false }
 chain-extension = { path = "../../../obce-test-environment/chain-extension", default-features = false, features = ["ink"] }
 
 [lib]
-name = "contract"
 path = "lib.rs"
-crate-type = [
-    "cdylib"
-]
 
 [features]
 default = ["std"]
