@@ -7,6 +7,46 @@ As in the original example, this one provides you with:
 * ink! smart contract, that calls the chain extension
 * Substrate extension
 
+## Details
+
+File structure of the chain extension is as follows:
+
+* `lib.rs` - defines the glue code between Substrate and ink! parts of the chain extension.
+* `ink.rs` - contains a struct, which can be used by ink! smart contracts to interact with your chain extension.
+* `substrate.rs` - contains the implementation of the chain extension for Substrate-based chains.
+
+### `lib.rs`
+
+Using `#[obce::definition]` macro, `lib.rs` provides us with the automatically generated
+code that ensures chain extension identifier, method identifier and method ABI matching between ink! and Substrate.
+
+To provide a stable chain extension identifier for registry purposes, we specify an optional `id` parameter
+when using `#[obce::definition]` macro.
+
+We also have a custom error enumeration defined with `#[obce::error]` macro.
+
+### `ink.rs`
+
+The ink! part of the chain extension is fairly simple, since most of the work is already done
+by `#[obce::definition]` macro we used previously.
+
+When used with `ink` feature enabled, `#[obce::definition]` macro generated glue code methods
+as default trait methods, so to start using them we need to implement this trait for some struct.
+
+This struct is also marked with the `#[obce::ink_lang::extension]` macro, which automatically
+generates the necessary `impl` blocks to make sure that you can use your chain extension
+in the [ink! environment](https://use.ink/basics/environment-functions) context.
+
+### `substrate.rs`
+
+The Substrate part of the chain extension requires a single trait `impl` block
+marked with `#[obce::implementation]` macro.
+
+For more information on generics and their trait bounds check documentation
+for `#[obce::implementation]` macro. In general, the bounds are similar to what
+you would use by implementing chain extension from scratch, but with the introduction
+of a more easily testable `ChainExtensionEnvironment` trait.
+
 ## Example integration
 
 ### Substrate
@@ -66,7 +106,7 @@ impl pallet_contracts::Config for Runtime {
 
 5. Launch your node with the `cargo run` command.
 
-### Ink
+### ink!
 
 1. Make sure that you have [`cargo-contract`](https://github.com/paritytech/cargo-contract#installation) installed.
 2. Create new ink! contract with `cargo contract new` command.
