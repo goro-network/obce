@@ -1,5 +1,7 @@
 # OpenBrush Chain Extension library
 
+[![CI/CD](https://github.com/Brushfam/obce/actions/workflows/ci.yml/badge.svg)](https://github.com/Brushfam/obce/actions/workflows/ci.yml)
+
 The library provides tools and primitives to simplify the development of chain 
 extensions for ink! and Substrate.
 
