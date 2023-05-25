@@ -1,6 +1,6 @@
 # OBCE usage example
 
-This example is a port of a [rand-extension example](https://github.com/paritytech/ink/tree/master/examples/rand-extension) from ink! repo.
+This example is a port of a [rand-extension example](https://github.com/paritytech/ink/tree/master/integration-tests/rand-extension) from ink! repo.
 
 As in the original example, this one provides you with:
 
