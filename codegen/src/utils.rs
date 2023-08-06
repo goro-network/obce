@@ -116,7 +116,7 @@ where
 {
     fn find_by_name(self, name: &str) -> Option<(LitOrPath<'a>, &'a Ident)> {
         self.into_iter().find_map(|attr| {
-            match attr.borrow() {
+            match attr {
                 NestedMeta::Meta(Meta::NameValue(value)) => {
                     if let Some(ident) = value.path.get_ident() {
                         (ident == name).then_some((LitOrPath::Lit(&value.lit), ident))
