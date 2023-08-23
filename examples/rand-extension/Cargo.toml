@@ -7,23 +7,22 @@ edition = "2021"
 [dependencies]
 ink = { version = "4.2.0", default-features = false }
 
-scale = { package = "parity-scale-codec", version = "3", default-features = false, features = ["derive"] }
+scale = { package = "parity-scale-codec", version = "3", default-features = false, features = [
+    "derive",
+] }
 scale-info = { version = "2.6", default-features = false, features = ["derive"], optional = true }
 
 rand-extension = { path = "./chain-extension", default-features = false, features = ["ink"] }
 
 [dev-dependencies]
-obce = { git = "https://github.com/727-Ventures/obce", default-features = false, features = ["ink-std"] }
+obce = { git = "https://github.com/goro-network/obce", default-features = false, features = [
+    "ink-std",
+] }
 
 [lib]
 path = "lib.rs"
 
 [features]
 default = ["std"]
-std = [
-    "ink/std",
-    "scale/std",
-    "scale-info/std",
-    "rand-extension/ink-std"
-]
+std = ["ink/std", "scale/std", "scale-info/std", "rand-extension/ink-std"]
 ink-as-dependency = []

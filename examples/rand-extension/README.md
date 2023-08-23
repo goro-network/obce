@@ -54,7 +54,7 @@ of a more easily testable `ChainExtensionEnvironment` trait.
 In this section, we will initialize a `substrate-contracts-node` with our own chain extension,
 which can later be used by the smart contracts that are deployed on this node.
 
-1. Clone the [`substrate-contracts-node`](https://github.com/paritytech/substrate-contracts-node) repository.
+1. Clone the [`substrate-contracts-node`](https://github.com/goro-network/substrate.git-contracts-node) repository.
 2. Copy the `chain-extension` crate into your project and add it as a workspace member to `Cargo.toml` file:
 
 ```toml
